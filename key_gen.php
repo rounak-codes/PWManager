@@ -1,21 +1,27 @@
 <?php
 
-// Generate a new private (and public) key pair
-$privateKey = openssl_pkey_new(array(
-    'private_key_bits' => 2048, // Key size
-    'private_key_type' => OPENSSL_KEYTYPE_RSA, // Key type
-));
+use phpseclib3\Crypt\RSA;
 
-// Get the private key
-openssl_pkey_export($privateKey, $privateKeyString);
+// Include Composer's autoloader
+require 'vendor/autoload.php';
 
-// Get the public key
-$publicKeyDetails = openssl_pkey_get_details($privateKey);
-$publicKeyString = $publicKeyDetails['key'];
+// Initialize RSA object
+RSA::createKey(2048);
 
-// Output the keys
-echo "Private Key:\n";
-echo $privateKeyString . "\n\n";
+// Public key
+$publicKey = $keyPair['publickey'];
 
-echo "Public Key:\n";
-echo $publicKeyString . "\n";
+// Private key
+$privateKey = $keyPair['privatekey'];
+
+// File paths
+$publicKeyFile = 'public.pem';
+$privateKeyFile = 'private.pem';
+
+// Save public key to file
+file_put_contents($publicKeyFile, $publicKey);
+
+// Save private key to file
+file_put_contents($privateKeyFile, $privateKey);
+
+echo "RSA key pair generated and saved to files: $publicKeyFile, $privateKeyFile";
