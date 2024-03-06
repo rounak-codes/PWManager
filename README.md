@@ -1,3 +1,5 @@
+# **THIS CODE IS A WORK IN PROGRESS , PLEASE CONTRIBUTE**
+
 # Password Manager
 
 This is a password manager web application developed using HTML5, Bootstrap, and PHP. It provides functionalities for account creation, password management (add, edit, delete), and ensures security of passwords using encryption methods.
