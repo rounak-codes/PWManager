@@ -20,8 +20,8 @@ function insertUser($username, $encryptedPassword)
         die("Connection failed: " . $conn->connect_error);
     }
 
-    // Prepare SQL statement to insert user into 'passwords' table
-    $sql = "INSERT INTO passwords (username,password) VALUES (?, ?)";
+    // Prepare SQL statement to insert user into 'users' table
+    $sql = "INSERT INTO users (username,password) VALUES (?, ?)";
     $stmt = $conn->prepare($sql);
 
     // Bind parameters and execute query
