@@ -42,11 +42,14 @@ function verifyLogin($username, $password)
 
         // Verify the password
         if ($decryptedPassword === $password) {
+            echo "Login Successful , Redirecting now...";
             return true; // Login successful
         } else {
+            echo "Incorrect password";
             return false; // Incorrect password
         }
     } else {
+        echo "User not found!";
         return false; // User not found
     }
 }
@@ -58,8 +61,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Verify user's login credentials
     if (verifyLogin($username, $password)) {
-        echo "Login successful.";
+        header("Location: manage_passwords.html");
+        exit();
     } else {
-        echo "Login failed. Invalid username or password.";
+        header("Location : index.html");
+        exit();
     }
 }
