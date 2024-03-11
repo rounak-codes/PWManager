@@ -6,13 +6,13 @@ use phpseclib3\Crypt\RSA;
 require 'vendor/autoload.php';
 
 // Initialize RSA object
-RSA::createKey(2048);
+$rsa = RSA::createKey(2048);
 
 // Public key
-$publicKey = $keyPair['publickey'];
+$publicKey = $rsa->getPublicKey();
 
 // Private key
-$privateKey = $keyPair['privatekey'];
+$privateKey = $rsa->getPublicKey();
 
 // File paths
 $publicKeyFile = 'public.pem';
