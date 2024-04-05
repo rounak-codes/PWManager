@@ -1,22 +1,39 @@
 <?php
-// Include phpseclib3 autoloader
 require 'vendor/autoload.php';
 include_once 'db_connect.php';
-
-// Include the password encryption function
 include 'password_encryption.php';
 
-// Assuming registration is successful
+// Check if the encryption key exists in the database
+$stmt = $conn->prepare("SELECT enc_key FROM enkeys LIMIT 1");
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 1) {
+    // Key exists, retrieve it from the database
+    $row = $result->fetch_assoc();
+    $encryptionKey = $row['enc_key'];
+} else {
+    // Key doesn't exist, generate a new one
+    $encryptionKey = generateEncryptionKey();
+
+    // Store the new key in the database
+    $stmt = $conn->prepare("INSERT INTO enkeys (enc_key) VALUES (?)");
+    $stmt->bind_param("s", $encryptionKey);
+    $stmt->execute();
+}
+
+$stmt->close();
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Retrieve data from form
     $username = $_POST['username'];
     $email = $_POST['email'];
-    $password = $_POST['password']; // Assuming password is submitted from the form
+    $password = $_POST['password'];
+    
+    // Encrypt password
+    $encryptionData = encryptPassword($password, $encryptionKey);
 
-    // Encrypt the password using the function from password_encryption.php
-    $encryptionData = encryptPassword($password,$encryptionKey);
-    // Prepare SQL statement for storing encrypted password and IV
-    $stmt = $conn->prepare("INSERT INTO users (username, email, password, iv) VALUES (?, ?, ?, ?)");
+    // Prepare SQL statement for storing user data
+    $stmt = $conn->prepare("INSERT INTO users (username, email, encrypted_password, iv) VALUES (?, ?, ?, ?)");
     $stmt->bind_param("ssss", $username, $email, $encryptionData['encryptedPassword'], $encryptionData['iv']);
 
     // Execute the statement

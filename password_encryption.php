@@ -1,7 +1,6 @@
 <?php
 // Include phpseclib3 autoloader
 require 'vendor/autoload.php';
-include_once 'db_connect.php';
 
 use phpseclib3\Crypt\AES;
 
@@ -17,15 +16,20 @@ function generateEncryptionKey() {
 
 // Function to encrypt the password
 function encryptPassword($password, $encryptionKey) {
+    // Generate a 128-bit IV
     $iv = generateIV();
-    $encryptionKey = generateEncryptionKey();
+
+    // Create AES instance
     $aes = new AES('cbc');
     $aes->setKey($encryptionKey);
     $aes->setIV($iv);
+
+    // Encrypt the password
     $encryptedPassword = $aes->encrypt($password);
-    $encryptedData = base64_encode($iv . $encryptedPassword);
+
+    // Return the encrypted password and IV as binary data
     return array(
-        'encryptedPassword' => $encryptedData,
+        'encryptedPassword' => $encryptedPassword, // Already binary
         'iv' => $iv
     );
 }

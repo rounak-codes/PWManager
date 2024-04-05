@@ -1,70 +1,52 @@
 <?php
+// Include phpseclib3 autoloader
+require 'vendor/autoload.php';
+include_once 'db_connect.php';
 
-// Include necessary files
-require_once "db_connect.php"; // Include database connection
-require_once "password_encryption.php"; // Include password encryption functions
+// Include the password decryption function
+include 'password_decryption.php';
 
-// Function to verify user's login credentials
-function verifyLogin($username, $password)
-{
-    $servername = "localhost";
-    $username = "rounak";
-    $password = "rounakbag24";
-    $database = "RounakDB";
+// Assuming login is successful
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Retrieve data from form
+    $username = $_POST['username'];
+    $password = $_POST['password'];
 
-    // Create connection
-    $conn = new mysqli($servername, $username, $password, $database);
-
-    // Check connection
-    if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
-    }
-
-    // Prepare SQL statement to select user from 'users' table
-    $sql = "SELECT * FROM users WHERE username = ?";
-    $stmt = $conn->prepare($sql);
-
-    // Bind parameters and execute query
+    // Prepare SQL statement for retrieving encrypted password, IV, and encryption key
+    $stmt = $conn->prepare("SELECT password, iv, encryption_key FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
+
+    // Execute the statement
     $stmt->execute();
 
-    // Get result
-    $result = $stmt->get_result();
+    // Bind the result variables
+    $stmt->bind_result($encryptedPassword, $iv, $encryptionKey);
+    // Fetch the result
+    $stmt->fetch();
 
-    // Check if user exists
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        $storedPassword = $row["password"];
+    // Close statement
+    $stmt->close();
 
-        // Decrypt the stored password using RSA private key
-        $privateKeyPEM = file_get_contents("private.pem"); // Example: Load private key from file
-        $decryptedPassword = decryptPassword($password);
-
-        // Verify the password
-        if ($decryptedPassword === $password) {
-            echo "Login Successful , Redirecting now...";
-            return true; // Login successful
+    // If user exists
+    if ($encryptedPassword !== null) {
+        error_log("Encryption Key: " . bin2hex($encryptionKey));
+        error_log("IV: " . bin2hex($iv));
+        // Decrypt the stored password using the encryption key retrieved from the database
+        $decryptedPassword = decryptPassword($encryptedPassword, $encryptionKey, $iv);
+        // Check if the entered password matches the decrypted password
+        if ($password === $decryptedPassword) {
+            // Passwords match, redirect user to manage_passwords.html or do whatever you need
+            header("Location: manage_passwords.html");
+            exit();
         } else {
-            echo "Incorrect password";
-            return false; // Incorrect password
+            // Incorrect password, redirect back to login page with an error message
+            header("Location: login.html?error=Incorrect credentials");
+            exit();
         }
     } else {
-        echo "User not found!";
-        return false; // User not found
-    }
-}
-
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Retrieve form data
-    $username = $_POST["username"];
-    $password = $_POST["password"];
-
-    // Verify user's login credentials
-    if (verifyLogin($username, $password)) {
-        header("Location: manage_passwords.html");
-        exit();
-    } else {
-        header("Location : index.html");
+        // User not found, redirect back to login page with an error message
+        header("Location: login.html?error=User not found");
         exit();
     }
 }
+

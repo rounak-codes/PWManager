@@ -1,18 +1,19 @@
 <?php
+// Include phpseclib3 autoloader
+require 'vendor/autoload.php';
+include_once 'db_connect.php';
 
-use phpseclib3\Crypt\RSA;
-require_once 'vendor/autoload.php';
+use phpseclib3\Crypt\AES;
 
-// Function to decrypt password using RSA private key
-function decryptPassword($password)
-{
-    // Load public key
-    $privatekey = file_get_contents("private.pem");
-    if ($privatekey === false) {
-        echo "Error in fetching key";
-        return false;
-    }
-    $password = RSA::loadPrivateKeyFormat(file_get_contents("private.pem"),$password=false);
-    $decryptedPassword = $password ->decrypt($password);
+function decryptPassword($encryptedPassword, $iv) {
+    // Create AES instance with the predefined encryption key
+    global $encryptionKey;
+    $aes = new AES('cbc');
+    $aes->setKey($encryptionKey);
+    $aes->setIV($iv);
+    
+    // Decrypt the password
+    $decryptedPassword = $aes->decrypt($encryptedPassword);
+    
     return $decryptedPassword;
 }
