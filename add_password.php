@@ -1,6 +1,6 @@
 <?php
 // Include your database connection file here
-
+include_once 'db_connect.php';
 // Receive username and password from the request body
 $data = json_decode(file_get_contents('php://input'), true);
 $username = $data['username'];

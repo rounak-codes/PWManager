@@ -20,6 +20,7 @@ function fetchPasswords() {
         })
         .catch(error => console.error('Error fetching passwords:', error));
 }
+window.addEventListener('load', fetchPasswords);
 
 // Function to add password
 function addPassword() {

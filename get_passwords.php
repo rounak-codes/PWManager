@@ -1,13 +1,19 @@
 <?php
 // Include your database connection file here
+include_once 'db_connect.php';
 
 // Fetch passwords from the database
-// Example: SELECT id, username, password FROM passwords_table
-$passwords = [
-    ['id' => 1, 'username' => 'user1', 'password' => 'password1'],
-    ['id' => 2, 'username' => 'user2', 'password' => 'password2'],
-    // Add more passwords as needed
-];
+$passwords = [];
+$stmt = $conn->prepare("SELECT id, username, password FROM passwords");
+$stmt->execute();
+$result = $stmt->get_result();
+while ($row = $result->fetch_assoc()) {
+    $passwords[] = $row;
+}
+
+// Close the statement and connection
+$stmt->close();
+$conn->close();
 
 // Return passwords as JSON
 header('Content-Type: application/json');
