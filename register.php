@@ -4,7 +4,7 @@ include_once 'db_connect.php';
 include 'password_encryption.php';
 
 // Check if the encryption key exists in the database
-$stmt = $conn->prepare("SELECT enc_key FROM enkeys LIMIT 1");
+$stmt = $conn->prepare("SELECT enc_key FROM enkeys where id = 1 LIMIT 1");
 $stmt->execute();
 $result = $stmt->get_result();
 
