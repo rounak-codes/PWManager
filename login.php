@@ -4,7 +4,7 @@ include_once 'db_connect.php';
 include 'password_decryption.php';
 
 // Check if the encryption key exists in the database
-$stmt = $conn->prepare("SELECT enc_key FROM encryption_keys LIMIT 1");
+$stmt = $conn->prepare("SELECT enc_key FROM enkeys LIMIT 1");
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -36,7 +36,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $iv = $row['iv'];
 
         // Decrypt the stored password using the encryption key retrieved from the database
-        $decryptedPassword = decryptPassword($encryptedPassword, $encryptionKey);
+        $decryptedPassword = decryptPassword($encryptedPassword, $encryptionKey,$iv);
 
         // Check if the entered password matches the decrypted password
         if ($password === $decryptedPassword) {

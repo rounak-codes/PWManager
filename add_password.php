@@ -16,4 +16,3 @@ $password = $data['password'];
 
 // Return success message
 echo json_encode(['message' => 'Password added successfully']);
-?>

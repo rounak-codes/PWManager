@@ -14,4 +14,3 @@ $id = $_GET['id'];
 
 // Return success message
 echo json_encode(['message' => 'Password deleted successfully']);
-?>
