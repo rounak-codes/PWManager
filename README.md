@@ -26,7 +26,7 @@ This is a password manager web application developed using HTML5, Bootstrap, and
     git clone https://github.com/rounak-codes/PWManager.git
     ```
 
-2. Import the database schema (`users.sql`) into your MySQL database.
+2. Import the database schema (`all the sql files`) into your MySQL database.
 
 3. Configure database connection parameters in `db_connect.php`:
 
