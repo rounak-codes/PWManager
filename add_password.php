@@ -1,14 +1,10 @@
 <?php
-// Include your database connection file here
+require 'vendor/autoload.php';
 include_once 'db_connect.php';
+include 'password_encryption.php';
 
-// Receive username and password from the request body
-$data = json_decode(file_get_contents('php://input'), true);
-$username = $data['username'];
-$password = $data['password'];
-
-// Retrieve the second encryption key from the database
-$stmt = $conn->prepare("SELECT enc_key FROM enkeys WHERE id = 2 LIMIT 1");
+// Check if the encryption key exists in the database and retrieve it
+$stmt = $conn->prepare("SELECT enc_key FROM enkeys WHERE id = 2"); // Assuming ID 2 is the key for managing passwords
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -17,19 +13,37 @@ if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
     $encryptionKey = $row['enc_key'];
 } else {
-    // Second encryption key not found, handle error (e.g., redirect or return error response)
-    echo json_encode(['error' => 'Second encryption key not found']);
-    exit();
+    // Handle the case where the encryption key is not found (optional)
+    die("Encryption key not found.");
 }
 
-// Encrypt the password using the second encryption key
-$encryptedPassword = openssl_encrypt($password, 'aes-256-cbc', $encryptionKey, OPENSSL_RAW_DATA);
-
-// Insert new password into the database
-$stmt = $conn->prepare("INSERT INTO passwords_table (username, password) VALUES (?, ?)");
-$stmt->bind_param("ss", $username, $encryptedPassword);
-$stmt->execute();
 $stmt->close();
 
-// Return success message
-echo json_encode(['message' => 'Password added successfully']);
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+    
+    // Encrypt password using the encryption key
+    $encryptionData = encryptPassword($password, $encryptionKey);
+
+    // Encode encrypted password for MySQL storage
+    $encryptedPassword = base64_encode($encryptionData['encryptedPassword']);
+
+    // Encode encryption key for MySQL storage (assuming it's binary)
+    $encodedEncryptionKey = base64_encode($encryptionKey);
+
+    // Prepare SQL statement for storing encrypted user data
+    $stmt = $conn->prepare("INSERT INTO passwords (username, pwds, iv, encryption_key) VALUES (?, ?, ?, ?)");
+    $stmt->bind_param("ssss", $username, $encryptedPassword, $encryptionData['iv'], $encodedEncryptionKey);
+
+    // Execute the statement
+    $stmt->execute();
+
+    // Close statement and connection
+    $stmt->close();
+    $conn->close();
+
+    // Redirect user to manage_passwords.html or any other page
+    header("Location: manage_passwords.html");
+    exit();
+}
