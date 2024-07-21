@@ -1,21 +1,30 @@
 <?php
+session_start();
 include_once 'db_connect.php';
 
-// Fetch passwords from the database
-$sql = "SELECT username, pwds FROM passwords";
-$result = $conn->query($sql);
-
-if ($result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        echo "<div>";
-        echo "<span>{$row['username']}</span>";
-        echo "<span>{$row['pwds']}</span>";
-        echo "<button>Edit</button>";
-        echo "<button>Delete</button>";
-        echo "</div>";
-    }
-} else {
-    echo "No passwords found.";
+// Check if the user is logged in
+if (!isset($_SESSION['username'])) {
+    echo "User not logged in.";
+    exit();
 }
 
+$username = $_SESSION['username'];
+
+// Prepare SQL statement for retrieving passwords
+$stmt = $conn->prepare("SELECT site_name, username, pwds FROM passwords WHERE username = ?");
+$stmt->bind_param("s", $username);
+$stmt->execute();
+$result = $stmt->get_result();
+
+$passwords = [];
+
+while ($row = $result->fetch_assoc()) {
+    $passwords[] = $row;
+}
+
+$stmt->close();
 $conn->close();
+
+// Encode data to JSON
+header('Content-Type: application/json');
+echo json_encode($passwords);

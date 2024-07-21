@@ -44,6 +44,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $conn->close();
 
     // Redirect user to success page or do whatever you need
-    header("Location: manage_passwords.html");
+    header("Location: dashboard.html");
     exit();
 }

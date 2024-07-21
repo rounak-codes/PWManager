@@ -3,6 +3,8 @@ require 'vendor/autoload.php';
 include_once 'db_connect.php';
 include 'password_decryption.php';
 
+session_start(); // Start the session
+
 // Check if the encryption key exists in the database
 $stmt = $conn->prepare("SELECT enc_key FROM enkeys LIMIT 1");
 $stmt->execute();
@@ -13,7 +15,9 @@ if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
     $encryptionKey = $row['enc_key'];
 } else {
-    // Handle the case where the encryption key doesn't exist (possibly redirect to an error page)
+    // Handle the case where the encryption key doesn't exist
+    echo "Encryption key not found. Please contact support.";
+    exit();
 }
 
 $stmt->close();
@@ -22,6 +26,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Retrieve data from form
     $username = $_POST['username'];
     $password = $_POST['password'];
+
+    // Sanitize input (optional but recommended)
+    $username = htmlspecialchars($username);
+    $password = htmlspecialchars($password);
 
     // Prepare SQL statement for retrieving encrypted password and IV
     $stmt = $conn->prepare("SELECT encrypted_password, iv FROM users WHERE username = ?");
@@ -36,12 +44,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $iv = $row['iv'];
 
         // Decrypt the stored password using the encryption key retrieved from the database
-        $decryptedPassword = decryptPassword($encryptedPassword, $encryptionKey,$iv);
+        $decryptedPassword = decryptPassword($encryptedPassword, $encryptionKey, $iv);
 
         // Check if the entered password matches the decrypted password
         if ($password === $decryptedPassword) {
-            // Passwords match, redirect user to manage_passwords.html or do whatever you need
-            header("Location: manage_passwords.html");
+            // Passwords match, redirect user to dashboard.html or other page
+            $_SESSION['username'] = $username;
+            header("Location: dashboard.html");
             exit();
         } else {
             // Incorrect password, redirect back to login page with an error message
