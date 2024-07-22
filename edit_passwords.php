@@ -25,7 +25,7 @@ if ($result->num_rows === 1) {
 $stmt->close();
 
 // Fetch passwords for the logged-in user
-$stmt = $conn->prepare("SELECT site_name, username, pwds, iv FROM passwords WHERE user = ?");
+$stmt = $conn->prepare("SELECT id, site_name, username, pwds, iv FROM passwords WHERE user = ?");
 $stmt->bind_param("s", $username);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -35,8 +35,9 @@ while ($row = $result->fetch_assoc()) {
     // Decrypt the password
     $decryptedPassword = decryptPassword($row['pwds'], $encryptionKey, $row['iv']);
     $passwords[] = [
+        'id' => $row['id'],
         'site_name' => $row['site_name'],
-        'username' => $row['username'],
+        'username' => $row['username'],  // Added username
         'password' => $decryptedPassword
     ];
 }
@@ -49,31 +50,41 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Passwords</title>
+    <title>Edit Passwords</title>
     <link rel="stylesheet" href="style.css"> <!-- Link to style.css -->
 </head>
 <body>
     <div class="container">
-        <h1>View Passwords</h1>
+        <h1>Edit Passwords</h1>
         <table class="passwords-table">
             <thead>
                 <tr>
                     <th>Site Name</th>
                     <th>Username</th>
                     <th>Password</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($passwords)): ?>
                     <tr>
-                        <td colspan="3">No passwords found.</td>
+                        <td colspan="4">No passwords found.</td>
                     </tr>
                 <?php else: ?>
                     <?php foreach ($passwords as $password): ?>
                         <tr>
-                            <td><?php echo htmlspecialchars($password['site_name']); ?></td>
-                            <td><?php echo htmlspecialchars($password['username']); ?></td>
-                            <td><?php echo htmlspecialchars($password['password']); ?></td>
+                            <form action="edit_passwords.php" method="post">
+                                <input type="hidden" name="id" value="<?php echo htmlspecialchars($password['id']); ?>">
+                                <td><?php echo htmlspecialchars($password['site_name']); ?></td>
+                                <td><?php echo htmlspecialchars($password['username']); ?></td>
+                                <td>
+                                    <input type="password" name="password" value="<?php echo htmlspecialchars($password['password']); ?>" required>
+                                </td>
+                                <td>
+                                    <button type="submit" name="action" value="edit">Edit</button>
+                                    <button type="submit" name="action" value="delete">Delete</button>
+                                </td>
+                            </form>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
@@ -84,5 +95,17 @@ $conn->close();
             <button id="logout" onclick="window.location.href='logout.php'">Logout</button>
         </div>
     </div>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            <?php if (isset($_GET['status'])): ?>
+                let status = "<?php echo htmlspecialchars($_GET['status']); ?>";
+                if (status === 'updated') {
+                    alert('Password has been updated.');
+                } else if (status === 'deleted') {
+                    alert('Password has been deleted.');
+                }
+            <?php endif; ?>
+        });
+    </script>
 </body>
 </html>

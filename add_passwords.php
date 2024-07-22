@@ -24,6 +24,7 @@ if ($result->num_rows === 1) {
 
 $stmt->close();
 
+// Process form submission
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if (isset($_POST['action'])) {
         $siteName = $_POST['site_name'];
@@ -38,6 +39,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $stmt->bind_param("ssssss", $siteName, $formUsername, $encryptionData['encryptedPassword'], $encryptionData['iv'], $encryptionKey, $username);
                 $stmt->execute();
                 $stmt->close();
+                echo "<script>alert('Password has been added successfully.');</script>";
                 break;
 
             case 'edit':
@@ -48,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $stmt->bind_param("sssssi", $siteName, $encryptionData['encryptedPassword'], $encryptionData['iv'], $encryptionKey, $id, $formUsername);
                 $stmt->execute();
                 $stmt->close();
+                echo "<script>alert('Password has been updated successfully.');</script>";
                 break;
 
             case 'delete':
@@ -57,11 +60,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $stmt->bind_param("is", $id, $formUsername);
                 $stmt->execute();
                 $stmt->close();
+                echo "<script>alert('Password has been deleted successfully.');</script>";
                 break;
         }
     }
 
     $conn->close();
-    header("Location: dashboard.html");
+    echo "<script>window.location.href = 'dashboard.html';</script>";
     exit();
 }
