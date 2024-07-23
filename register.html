@@ -7,37 +7,51 @@
     <title>Register</title>
 </head>
 <body>
-    <h2>Register</h2>
-    <form action="register.php" method="post">
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required><br>
-        <label for="email">Email :</label>
-        <input type="email" id="email" name="email" required><br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" onChange="onChange()" required><br>
-        <label for="confirm_password">Confirm Password:</label>
-        <input type="password" id="confirm_password" name="confirm_password" onChange="onChange()" required><br>
-        <input type="submit" value="Register">
-        <div id="warningBox" class="warning-box"></div>
-    </form>
+    <div class="container2">
+        <h2>Register</h2>
+        <form action="register.php" method="post">
+            <div class="form-group">
+                <label for="reg_username">Username:</label>
+                <input type="text" id="reg_username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="reg_email">Email:</label>
+                <input type="email" id="reg_email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label for="reg_password">Password:</label>
+                <input type="password" id="reg_password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="reg_confirm_password">Confirm Password:</label>
+                <input type="password" id="reg_confirm_password" name="confirm_password" required>
+            </div>
+            <input type="submit" value="Register">
+            <div id="reg_warningBox" class="warning-box"></div>
+        </form>
+        <div class="button-group">
+            <button onclick="location.href='login.html'">Login</button>
+            <button onclick="location.href='index.html'">Home</button>
+        </div>
+    </div>
     <script>
-        var warningBox = document.getElementById('warningBox');
-        var field1 = document.getElementById('password');
-        var field2 = document.getElementById('confirm_password');
+        var warningBox = document.getElementById('reg_warningBox');
+        var passwordField = document.getElementById('reg_password');
+        var confirmPasswordField = document.getElementById('reg_confirm_password');
 
         function checkFields() {
-            var field1Value = password.value;
-            var field2Value = confirm_password.value;
+            var passwordValue = passwordField.value;
+            var confirmPasswordValue = confirmPasswordField.value;
 
-            if (field1Value === field2Value) {
+            if (passwordValue === confirmPasswordValue) {
                 warningBox.style.display = 'none';
             } else {
                 warningBox.textContent = "Passwords do not match";
                 warningBox.style.display = 'block';
             }
         }
-        field1.addEventListener('input', checkFields);
-        field2.addEventListener('input', checkFields);
+        passwordField.addEventListener('input', checkFields);
+        confirmPasswordField.addEventListener('input', checkFields);
     </script>
 </body>
 </html>
