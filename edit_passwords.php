@@ -1,57 +1,88 @@
 <?php
 session_start();
 include_once 'db_connect.php';
+include_once 'password_encryption.php';
 include_once 'password_decryption.php';
 
-// Check if user is logged in
 if (!isset($_SESSION['username'])) {
-    die("Unauthorized access.");
+    header("Location: login.php");
+    exit();
 }
 
 $username = $_SESSION['username'];
 
-// Fetch encryption key
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id = $_POST['id'];
+    $action = $_POST['action'];
+    
+    // Fetch encryption key
+    $stmt = $conn->prepare("SELECT enc_key FROM enkeys WHERE id = 2 LIMIT 1");
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $encryptionKey = ($result->num_rows === 1) ? $result->fetch_assoc()['enc_key'] : die("Encryption key not found.");
+    $stmt->close();
+
+    if ($action === 'edit') {
+        $newPassword = $_POST['password'];
+        $encryptedData = encryptPassword($newPassword, $encryptionKey);
+        
+        $stmt = $conn->prepare("UPDATE passwords SET pwds = ?, iv = ? WHERE id = ? AND user = ?");
+        $stmt->bind_param("ssss", $encryptedData['encryptedPassword'], $encryptedData['iv'], $id, $username);
+        
+        if ($stmt->execute()) {
+            header("Location: edit_passwords.php?status=updated");
+        } else {
+            header("Location: edit_passwords.php?status=error");
+        }
+        $stmt->close();
+    } 
+    elseif ($action === 'delete') {
+        $stmt = $conn->prepare("DELETE FROM passwords WHERE id = ? AND user = ?");
+        $stmt->bind_param("ss", $id, $username);
+        
+        if ($stmt->execute()) {
+            header("Location: edit_passwords.php?status=deleted");
+        } else {
+            header("Location: edit_passwords.php?status=error");
+        }
+        $stmt->close();
+    }
+    exit();
+}
+
+// Fetch passwords
 $stmt = $conn->prepare("SELECT enc_key FROM enkeys WHERE id = 2 LIMIT 1");
 $stmt->execute();
 $result = $stmt->get_result();
-
-if ($result->num_rows === 1) {
-    $row = $result->fetch_assoc();
-    $encryptionKey = $row['enc_key'];
-} else {
-    die("Encryption key not found.");
-}
-
+$encryptionKey = ($result->num_rows === 1) ? $result->fetch_assoc()['enc_key'] : die("Encryption key not found.");
 $stmt->close();
 
-// Fetch passwords for the logged-in user
 $stmt = $conn->prepare("SELECT id, site_name, username, pwds, iv FROM passwords WHERE user = ?");
 $stmt->bind_param("s", $username);
 $stmt->execute();
 $result = $stmt->get_result();
-
 $passwords = [];
+
 while ($row = $result->fetch_assoc()) {
-    // Decrypt the password
-    $decryptedPassword = decryptPassword($row['pwds'], $encryptionKey, $row['iv']);
     $passwords[] = [
         'id' => $row['id'],
         'site_name' => $row['site_name'],
-        'username' => $row['username'],  // Added username
-        'password' => $decryptedPassword
+        'username' => $row['username'],
+        'password' => decryptPassword($row['pwds'], $encryptionKey, $row['iv'])
     ];
 }
-
 $stmt->close();
 $conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Passwords</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link to style.css -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
@@ -67,9 +98,7 @@ $conn->close();
             </thead>
             <tbody>
                 <?php if (empty($passwords)): ?>
-                    <tr>
-                        <td colspan="4">No passwords found.</td>
-                    </tr>
+                    <tr><td colspan="4">No passwords found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($passwords as $password): ?>
                         <tr>
@@ -78,11 +107,14 @@ $conn->close();
                                 <td><?php echo htmlspecialchars($password['site_name']); ?></td>
                                 <td><?php echo htmlspecialchars($password['username']); ?></td>
                                 <td>
-                                    <input type="password" name="password" value="<?php echo htmlspecialchars($password['password']); ?>" required>
+                                    <div class="password-field">
+                                        <input type="password" name="password" value="<?php echo htmlspecialchars($password['password']); ?>" required>
+                                        <button type="button" class="show-password">Show</button>
+                                    </div>
                                 </td>
                                 <td>
-                                    <button type="submit" name="action" value="edit">Edit</button>
-                                    <button type="submit" name="action" value="delete">Delete</button>
+                                    <button type="submit" name="action" value="edit" class="edit-btn">Save</button>
+                                    <button type="submit" name="action" value="delete" class="delete-btn" onclick="return confirm('Are you sure you want to delete this password?')">Delete</button>
                                 </td>
                             </form>
                         </tr>
@@ -91,21 +123,39 @@ $conn->close();
             </tbody>
         </table>
         <div class="button-group2">
-            <button onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
-            <button id="logout" onclick="window.location.href='logout.php'">Logout</button>
+            <button onclick="window.location.href='dashboard.html'">Dashboard</button>
+            <button onclick="window.location.href='logout.php'">Logout</button>
         </div>
     </div>
+
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            <?php if (isset($_GET['status'])): ?>
-                let status = "<?php echo htmlspecialchars($_GET['status']); ?>";
-                if (status === 'updated') {
-                    alert('Password has been updated.');
-                } else if (status === 'deleted') {
-                    alert('Password has been deleted.');
+    document.addEventListener("DOMContentLoaded", function() {
+        // Handle status messages
+        <?php if (isset($_GET['status'])): ?>
+            const status = "<?php echo htmlspecialchars($_GET['status']); ?>";
+            if (status === 'updated') {
+                alert('Password has been updated successfully.');
+            } else if (status === 'deleted') {
+                alert('Password has been deleted successfully.');
+            } else if (status === 'error') {
+                alert('An error occurred. Please try again.');
+            }
+        <?php endif; ?>
+
+        // Show/hide password functionality
+        document.querySelectorAll('.show-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const passwordInput = this.previousElementSibling;
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    this.textContent = 'Hide';
+                } else {
+                    passwordInput.type = 'password';
+                    this.textContent = 'Show';
                 }
-            <?php endif; ?>
+            });
         });
+    });
     </script>
 </body>
 </html>

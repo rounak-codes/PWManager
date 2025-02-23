@@ -3,9 +3,9 @@ session_start();
 include_once 'db_connect.php';
 include_once 'password_decryption.php';
 
-// Check if user is logged in
 if (!isset($_SESSION['username'])) {
-    die("Unauthorized access.");
+    header("Location: login.php");
+    exit();
 }
 
 $username = $_SESSION['username'];
@@ -14,43 +14,34 @@ $username = $_SESSION['username'];
 $stmt = $conn->prepare("SELECT enc_key FROM enkeys WHERE id = 2 LIMIT 1");
 $stmt->execute();
 $result = $stmt->get_result();
-
-if ($result->num_rows === 1) {
-    $row = $result->fetch_assoc();
-    $encryptionKey = $row['enc_key'];
-} else {
-    die("Encryption key not found.");
-}
-
+$encryptionKey = ($result->num_rows === 1) ? $result->fetch_assoc()['enc_key'] : die("Encryption key not found.");
 $stmt->close();
 
-// Fetch passwords for the logged-in user
+// Fetch passwords
 $stmt = $conn->prepare("SELECT site_name, username, pwds, iv FROM passwords WHERE user = ?");
 $stmt->bind_param("s", $username);
 $stmt->execute();
 $result = $stmt->get_result();
-
 $passwords = [];
+
 while ($row = $result->fetch_assoc()) {
-    // Decrypt the password
-    $decryptedPassword = decryptPassword($row['pwds'], $encryptionKey, $row['iv']);
     $passwords[] = [
         'site_name' => $row['site_name'],
         'username' => $row['username'],
-        'password' => $decryptedPassword
+        'password' => decryptPassword($row['pwds'], $encryptionKey, $row['iv'])
     ];
 }
-
 $stmt->close();
 $conn->close();
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Passwords</title>
-    <link rel="stylesheet" href="style.css"> <!-- Link to style.css -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
@@ -65,24 +56,46 @@ $conn->close();
             </thead>
             <tbody>
                 <?php if (empty($passwords)): ?>
-                    <tr>
-                        <td colspan="3">No passwords found.</td>
-                    </tr>
+                    <tr><td colspan="3">No passwords found.</td></tr>
                 <?php else: ?>
                     <?php foreach ($passwords as $password): ?>
                         <tr>
                             <td><?php echo htmlspecialchars($password['site_name']); ?></td>
                             <td><?php echo htmlspecialchars($password['username']); ?></td>
-                            <td><?php echo htmlspecialchars($password['password']); ?></td>
+                            <td>
+                                <div class="password-field">
+                                    <span class="password-text">••••••••</span>
+                                    <button type="button" class="show-password" data-password="<?php echo htmlspecialchars($password['password']); ?>">Show</button>
+                                </div>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
         </table>
         <div class="button-group2">
-            <button onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
-            <button id="logout" onclick="window.location.href='logout.php'">Logout</button>
+            <button onclick="window.location.href='dashboard.html'">Dashboard</button>
+            <button onclick="window.location.href='logout.php'">Logout</button>
         </div>
     </div>
+
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        document.querySelectorAll('.show-password').forEach(button => {
+            button.addEventListener('click', function() {
+                const passwordSpan = this.previousElementSibling;
+                const password = this.getAttribute('data-password');
+                
+                if (passwordSpan.textContent === '••••••••') {
+                    passwordSpan.textContent = password;
+                    this.textContent = 'Hide';
+                } else {
+                    passwordSpan.textContent = '••••••••';
+                    this.textContent = 'Show';
+                }
+            });
+        });
+    });
+    </script>
 </body>
 </html>
