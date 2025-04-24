@@ -17,7 +17,7 @@ color: white;
 
 /* Container Styles */
 .container, .container2 {
-background: linear-gradient(135deg, #ffffff 0%, #f3f3f3 100%);
+background: linear-gradient(135deg, #da9191 0%, #d09797 100%);
 padding: 2rem;
 border-radius: 12px;
 box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -35,7 +35,7 @@ font-weight: 600;
 }
 
 h1 {
-color:white;
+color:rgb(255, 255, 255);
 font-size: 2.5rem;
 margin-top: 2rem;
 }
@@ -139,13 +139,17 @@ overflow: hidden;
 .passwords-table td {
 padding: 1rem;
 text-align: left;
-border-bottom: 1px solid #e2e8f0;
+border-bottom: 1px solid #f4f4f4;
 }
 
 .passwords-table th {
-background: linear-gradient(135deg, #f7fafc 0%, #e2e8f0 100%);
+background: linear-gradient(135deg, #62a4d0 0%, #5281bd 100%);
 font-weight: 600;
 color: #2d3748;
+}
+
+.passwords-table tr{
+    background-color: #076aeb;
 }
 
 .passwords-table tr:last-child td {
@@ -153,7 +157,7 @@ border-bottom: none;
 }
 
 .passwords-table tr:hover {
-background-color: #f8fafc;
+background-color: #327ac2;
 }
 
 /* Password Field Styles */

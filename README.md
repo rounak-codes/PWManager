@@ -16,6 +16,12 @@ This is a password manager web application developed using HTML5, Bootstrap, and
 - **MySQL**: For storing user accounts and encrypted passwords.
 - **Encryption Libraries**: PHP encryption libraries are used for encrypting and decrypting passwords.
 
+## Screenshots
+
+![Screenshot](images/1.png)
+![Screenshot](images/2.png)
+![Screenshot](images/3.png)
+
 ## Usage
 
 1. Clone the repository:
